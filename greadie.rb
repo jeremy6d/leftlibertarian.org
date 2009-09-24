@@ -42,7 +42,7 @@ class GReadie::Entry
     @google_item_id = item['id']
     @published = item['published']
     @updated = item['updated']
-    @body = item['content']["content"]
+    @body = get_body(item)
     @feed = GReadie::Feed.new(item['origin'])
   end
   
@@ -54,11 +54,13 @@ class GReadie::Entry
     Time.new @updated
   end
   
-  def to_li
-    "<li class='entry' id='#{@google_item_id}'>
-        <h2><a href='#{@href}'>#{@title}</a></h2>
-        <p>#{@body}</p>
-     </li>"
+protected
+
+  def get_body(item_hash)
+    container = item_hash['content'] || item_hash['summary']
+    return container['content']
+  rescue
+    nil
   end
 end
 

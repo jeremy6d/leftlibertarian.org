@@ -4,6 +4,7 @@ class LLDotOrg
   GOOGLE_USERNAME = "leftlibertarian.org"
   GOOGLE_PASSWORD = "nu7og9pewm6ayd7wi4tef7hat3gag4niel1"
   MAX_BODY_LENGTH = 1250
+  PARAGRAPH_DELIMITER_REGEXP = /(<br>|<p>|<\/p>|\n)/
   
 	def call(env)
 	  conn = establish_connection
@@ -25,7 +26,7 @@ class LLDotOrg
 	end
 	
 	def massage(item)
-	  paragraphs = item.body.split("<br><br>").compact
+	  paragraphs = get_paragraphs(item.body)
 	  len = 0
 	  final_para_len = nil
 	  final_index = 0
@@ -38,23 +39,16 @@ class LLDotOrg
 	    len = len + p.length
 	  end
 
-	  unless final_para_len.nil?
+	  unless final_para_len.nil? || (final_index >= paragraphs.size)
 	    paragraphs[final_index] = paragraphs[final_index][0..final_para_len]
-	    paragraphs[final_index] << "..."
+	    paragraphs[final_index] << "<span class='read-more'>... <a href='#{item.href}'>(read more)</a></span>" 
 	  end
 	  
-	  final_body = paragraphs[0..final_index].collect { |p| "<p>#{p}</p>" }.join
-    
-    unless final_para_len.nil?
-      final_body << "<p class='read-more'><a href='#{item.href}'>Read more...</a></p>" 
-    end
-    
-    final_body
+	  paragraphs[0..((final_index < 2) ? final_index : 2)].collect { |p| "<p>#{p}</p>" }.join
 	end
 	
-	def truncate(content)
-	  return content unless content.length > MAX_BODY_LENGTH
-	  
+	def get_paragraphs(content)
+    content.split(PARAGRAPH_DELIMITER_REGEXP).reject { |p| p.nil? || p == "" || PARAGRAPH_DELIMITER_REGEXP.match(p) }.compact
 	end
 	
 	def get_html(list)
@@ -73,6 +67,7 @@ class LLDotOrg
         </head>
     	  <body>
       	  <h1>leftlibertarian.org</h1>
+      	  <span class="slogan">Left libertarian views from around the web...</span>
           <ul> }, list, %q{</ul>
         </body>
       </html> }].join
