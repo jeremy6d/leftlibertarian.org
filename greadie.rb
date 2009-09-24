@@ -1,5 +1,5 @@
 require 'google/reader'
-require 'JSON'
+require 'json'
 
 class GReadie
   READING_LIST_URL = "http://www.google.com/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
