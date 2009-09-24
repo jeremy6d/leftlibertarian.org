@@ -2,7 +2,8 @@ require 'google/reader'
 require 'JSON'
 
 class GReadie
-  READING_LIST_URL = "http://www.google.com/reader/api/0/stream/contents/user/-/state/com.google/reading-list?xt=user/-/state/com.google/read"
+  READING_LIST_URL = "http://www.google.com/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
+  UNREAD_LIST_URL  = READING_LIST_URL + "?xt=user/-/state/com.google/read"
 
 	def initialize(in_username, in_password)
 		@username = in_username
@@ -10,9 +11,7 @@ class GReadie
 	end
 
 	def reading_list
-	  json_hash = JSON.parse(fetch(READING_LIST_URL))
-    
-    json_hash['items'].collect do |item_hash|
+	  json_reading_list.collect do |item_hash|
       GReadie::Entry.new(item_hash)
     end
 	end
@@ -27,6 +26,10 @@ protected
 	  raise "Couldn't connect to Google Reader" unless connect!
 	  Google::Reader::Base.get url
 	end
+	
+	def json_reading_list
+	  JSON.parse(fetch(READING_LIST_URL))['items']
+	end
 end
 
 class GReadie::Entry
@@ -35,7 +38,7 @@ class GReadie::Entry
   def initialize(item)
     @title = item['title']
     @author = item['author']
-    @href = item['alternate']
+    @href = item['alternate'].first['href']
     @google_item_id = item['id']
     @published = item['published']
     @updated = item['updated']

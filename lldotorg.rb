@@ -6,16 +6,20 @@ class LLDotOrg
   MAX_BODY_LENGTH = 1250
   
 	def call(env)
-	  conn = GReadie.new GOOGLE_USERNAME, GOOGLE_PASSWORD
+	  conn = establish_connection
 	  
     list = conn.reading_list.collect { |item| list_item(item) }
 	  
 	  [ 200, {}, get_html(list) ]
 	end
 	
+	def establish_connection
+	  GReadie.new GOOGLE_USERNAME, GOOGLE_PASSWORD
+	end
+	
 	def list_item(entry)
 	  "<li class='entry' id='#{entry.google_item_id}'>
-        <h2><a href='#{entry.href}'>#{entry.title}</a> <small>#{entry.author} at <a href='entry.feed.href'>#{entry.feed.title}</a></small></h2>
+        <h2><a href='#{entry.href}'>#{entry.title}</a> <small>#{entry.author} at <a href='#{entry.feed.href}'>#{entry.feed.title}</a></small></h2>
         #{massage(entry)}
      </li>"
 	end
