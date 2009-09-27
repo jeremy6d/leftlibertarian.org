@@ -10,10 +10,12 @@ class GReadie
 		@password = in_password
 	end
 
-	def reading_list
-	  json_reading_list.collect do |item_hash|
+	def reading_list(continuation = nil)
+	  response = json_reading_list(continuation)
+	  list = response['items'].collect do |item_hash|
       GReadie::Entry.new(item_hash)
     end
+    [list, response['continuation']]
 	end
 
 protected
@@ -27,8 +29,10 @@ protected
 	  Google::Reader::Base.get url
 	end
 	
-	def json_reading_list
-	  JSON.parse(fetch(READING_LIST_URL))['items']
+	def json_reading_list(continuation_token = nil)
+	  querystring = "?c=#{continuation_token}" if continuation_token
+	  url = "#{READING_LIST_URL}#{querystring}"
+	  JSON.parse(fetch(url))
 	end
 end
 
