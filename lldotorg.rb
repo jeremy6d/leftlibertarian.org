@@ -1,31 +1,49 @@
 require 'greadie'
 
-class LLDotOrg
+class LLDotOrg  
   GOOGLE_USERNAME = "leftlibertarian.org"
   GOOGLE_PASSWORD = "nu7og9pewm6ayd7wi4tef7hat3gag4niel1"
   MAX_BODY_LENGTH = 1250
   PARAGRAPH_DELIMITER_REGEXP = /(<br>|<p>|<\/p>|\n)/
   
-	def call(env)
-	  conn = establish_connection
-	  
+  def initialize
+    @conn = LLDotOrg.establish_connection
+  end
+  
+	def call(env)	  
     tokens = /continue\/(\w+)/.match env['PATH_INFO']
     continuation = tokens.captures.first unless tokens.nil?
     
-    list, continuation = conn.reading_list(continuation)
+    list, continuation = @conn.reading_list(20, continuation)
     
     page = get_html(list.collect { |item| list_item(item) }, continuation)
 	  
 	  [ 200, {}, page ]
 	end
 	
-	def generate
-	  conn = establish_connection
+	def generate(save_to_path)
+	  raw_list = @conn.reading_list(999999).first
 	  
-	  list = conn.reading_list.collect { |item| list_item(item) }
+	  puts raw_list.size
+	  
+	  html_list = raw_list.collect { |item| list_item(item) }
+	  
+	  page_number = 1
+	  
+	  path = File.expand_path(save_to_path)
+	  
+	  until html_list.empty?
+	    file_to_write = File.join path, "#{page_number}.html"
+	    File.open file_to_write, "w" do |f|
+	      page_entries = html_list.slice!(0, 20)
+	      next_page_number = page_number + 1 unless html_list.empty?
+	      f.write generate_saved_html(page_entries, page_number, next_page_number)
+	    end
+	    page_number = page_number + 1
+	  end
 	end
 	
-	def establish_connection
+	def self.establish_connection
 	  GReadie.new GOOGLE_USERNAME, GOOGLE_PASSWORD
 	end
 	
@@ -64,7 +82,7 @@ class LLDotOrg
     content.split(PARAGRAPH_DELIMITER_REGEXP).reject { |p| p.nil? || p == "" || PARAGRAPH_DELIMITER_REGEXP.match(p) }.compact
 	end
 	
-	def get_html(list, continuation = nil)
+	def get_continuation_html(list, continuation = nil)
 	  [%q{<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
@@ -84,5 +102,28 @@ class LLDotOrg
           <ul> }, list, %q{</ul>}, "<div><a href='/continue/#{continuation}'>Next page</a></div>", %q{
         </body>
       </html> }].join
+	end
+	
+	def generate_saved_html(list, page_no, next_page_no)
+	  [%q{<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+      <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+        <head>
+            <meta http-equiv="Content-Type" content="application/xhtml+xml" charset=utf-8" />
+            <title>leftlibertarian.org}, (" - Page #{page_no}" if (page_no && (page_no > 1))), %q{</title>
+            <link type="text/css" rel="stylesheet" href="/style.css">
+            
+            <meta name="keywords" content="anarchy, anarchism, left libertarianism, market anarchism" />
+            <meta name="description" content="Left libertarian content from around the web..." />
+            <meta name="author" content="Jeremy Weiland" />
+            <meta name="ROBOTS" content="ALL" />
+        </head>
+    	  <body>
+      	  <h1>leftlibertarian.org</h1>
+      	  <span class="slogan">Left libertarian views from around the web...</span>
+          <ul> }, list, %q{</ul>}, ("<div><a href='/pages/#{next_page_no}'>Next page</a></div>" if next_page_no), %q{
+        </body>
+      </html> }].compact.join
 	end
 end

@@ -10,8 +10,8 @@ class GReadie
 		@password = in_password
 	end
 
-	def reading_list(continuation = nil)
-	  response = json_reading_list(continuation)
+	def reading_list(number_to_fetch = 20, continuation = nil)
+	  response = json_reading_list({:n => number_to_fetch, :c => continuation})
 	  list = response['items'].collect do |item_hash|
       GReadie::Entry.new(item_hash)
     end
@@ -23,16 +23,15 @@ protected
 	  @connection ||= Google::Reader::Base.establish_connection @username, @password
 	end
 	
-	def fetch(url)
+	def fetch(url, options)
 	  raise "No url provided" unless url
 	  raise "Couldn't connect to Google Reader" unless connect!
-	  Google::Reader::Base.get url
+	  Google::Reader::Base.get url, options
 	end
 	
-	def json_reading_list(continuation_token = nil)
-	  querystring = "?c=#{continuation_token}" if continuation_token
-	  url = "#{READING_LIST_URL}#{querystring}"
-	  JSON.parse(fetch(url))
+	def json_reading_list(options = {})
+	  url = "#{READING_LIST_URL}"
+	  JSON.parse(fetch(url, :query_hash => options))
 	end
 end
 
