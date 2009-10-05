@@ -3,7 +3,7 @@ require 'json'
 
 class GReadie
   READING_LIST_URL = "http://www.google.com/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
-  UNREAD_LIST_URL  = READING_LIST_URL + "?xt=user/-/state/com.google/read"
+  UNREAD_LIST_URL  = READING_LIST_URL + "?xt=user/-/state/com.google/read" #presently not used
 
 	def initialize(in_username, in_password)
 		@username = in_username

@@ -1,13 +1,12 @@
 require 'greadie'
 
 class LLDotOrg  
-  GOOGLE_USERNAME = "leftlibertarian.org"
-  GOOGLE_PASSWORD = "nu7og9pewm6ayd7wi4tef7hat3gag4niel1"
   MAX_BODY_LENGTH = 1250
   PARAGRAPH_DELIMITER_REGEXP = /(<br>|<p>|<\/p>|\n)/
   
-  def initialize
-    @conn = LLDotOrg.establish_connection
+  def initialize(environment = "development")
+    creds = YAML.load(File.open('config/credentials.yml'))
+    @conn = LLDotOrg.establish_connection creds[environment]['username'], creds[environment]['password']
   end
   
 	def call(env)	  
@@ -43,8 +42,8 @@ class LLDotOrg
 	  end
 	end
 	
-	def self.establish_connection
-	  GReadie.new GOOGLE_USERNAME, GOOGLE_PASSWORD
+	def self.establish_connection(username, password)
+	  GReadie.new username, password
 	end
 	
 	def list_item(entry)

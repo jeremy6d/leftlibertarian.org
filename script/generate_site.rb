@@ -1,3 +1,3 @@
 require 'rubygems'
 require 'lldotorg'
-LLDotOrg.new.generate("public")
+LLDotOrg.new('production').generate("public")
