@@ -32,7 +32,8 @@ class LLDotOrg
 	  path = File.expand_path(save_to_path)
 	  
 	  until html_list.empty?
-	    file_to_write = File.join path, "#{page_number}.html"
+	    file_name = (page_number == 1) ? "index" : page_number.to_s
+	    file_to_write = File.join path, "#{file_name}.html"
 	    File.open file_to_write, "w" do |f|
 	      page_entries = html_list.slice!(0, 20)
 	      next_page_number = page_number + 1 unless html_list.empty?
@@ -109,7 +110,7 @@ class LLDotOrg
 
       <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
         <head>
-            <meta http-equiv="Content-Type" content="application/xhtml+xml" charset=utf-8" />
+            <meta http-equiv="Content-Type" content="application/xhtml+xml" charset="utf-8" />
             <title>leftlibertarian.org}, (" - Page #{page_no}" if (page_no && (page_no > 1))), %q{</title>
             <link type="text/css" rel="stylesheet" href="/style.css">
             
