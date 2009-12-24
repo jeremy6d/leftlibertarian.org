@@ -57,6 +57,14 @@ class GReadie::Entry
     Time.new @updated
   end
   
+  def body=(text)
+    # parse body text into tag collections
+    # isolate paragraphs, blockquotes, and images
+    # grab first three paragraphs
+    # take word count of these paragraphs, find cutoff point
+    # close tags and return
+  end
+  
 protected
 
   def get_body(item_hash)

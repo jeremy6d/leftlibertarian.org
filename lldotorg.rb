@@ -87,7 +87,7 @@ class LLDotOrg
 
       <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
         <head>
-            <meta http-equiv="Content-Type" content="application/xhtml+xml" charset=utf-8" />
+            <meta http-equiv="Content-Type" content="application/xhtml+xml" charset="utf-8" />
             <title>leftlibertarian.org</title>
             <!-- link rel="shortcut icon" href="" / -->
             <meta name="keywords" content="anarchy, anarchism, left libertarianism, market anarchism" />
