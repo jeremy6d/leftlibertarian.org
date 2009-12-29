@@ -191,7 +191,7 @@ class LLDotOrg
 	end
 	
 	def apply_layout(title, content)
-	  render_haml "layout", {:content => content, :title => title}
+	  render_haml "layout", {:content => content, :title => title, :tracking_code => tracking_code}
 	end
 	
 	def render_haml(template_file_name, data_hash = {})
@@ -228,5 +228,17 @@ class LLDotOrg
 	  File.open("generation.log", "a") do |f|
 	    f.write "\n* Generated site at #{Time.now}, entries = #{entry_count}"
 	  end
+	end
+	
+	def tracking_code
+	  %q{<script type="text/javascript">
+    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+    try {
+    var pageTracker = _gat._getTracker("UA-3295516-1");
+    pageTracker._trackPageview();
+    } catch(err) {}</script>}
 	end
 end
