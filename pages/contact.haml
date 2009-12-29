@@ -1,0 +1,8 @@
+%script{:LANGUAGE => "JavaScript"}
+  var name="admin"; 
+  var host="leftlibertarian.org";
+  function theEmail() { document.write("<a href='mailto:" + name + "@" + host + "'>" + name + "@" + host + "</a>"); }
+%h2
+  Contact
+%p
+  If you have suggestions, comments, complaints, or what not, email us at <script>theEmail()</script>.

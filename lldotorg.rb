@@ -201,10 +201,11 @@ class LLDotOrg
 	end
 	
 	def generate_pages
-	  ["about"].each do |page_name|
-	    File.open("public/#{page_name}.html", "w") do |f|
-	      page_content = Haml::Engine.new(File.read("pages/about.haml")).render
-	      f.write apply_layout("About leftlibertarian.org", page_content)
+	  Dir.new("pages").entries.select { |n| /\.haml/.match n }.each do |page_name|
+	    page_title = page_name.split(".").first
+	    File.open("public/#{page_title}.html", "w") do |f|
+	      page_content = Haml::Engine.new(File.read("pages/#{page_name}")).render
+	      f.write apply_layout("#{page_title.titleize} leftlibertarian.org", page_content)
 	    end
 	  end
 	end
