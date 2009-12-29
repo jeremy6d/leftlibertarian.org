@@ -25,6 +25,14 @@ class LLDotOrg
 	  [ 200, {}, page ]
 	end
 	
+	def error_pages(target_dir)
+    ["404","5xx"].each do |err|
+      File.open("#{target_dir}/#{err}.html", "w") do |f|
+        f.write Haml::Engine.new(File.read("templates/#{err}.haml")).render
+      end
+    end
+	end
+	
 	def generate(save_to_path, limit = 999999)
 	  raw_list = @conn.reading_list(limit).first
 	  
