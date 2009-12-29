@@ -64,6 +64,7 @@ class LLDotOrg
 	  generate_pages
 	  render_css
 	  copy_images
+	  log raw_list.size
 	end
 	
 	def self.establish_connection(username, password)
@@ -211,6 +212,12 @@ class LLDotOrg
 	    next unless /\.(jpg|gif|png|bmp)/.match img_filename
 	    puts img_filename
 	    File.copy "#{images_src}/#{img_filename}", "#{images_dest}/#{img_filename}", true
+	  end
+	end
+	
+	def log(entry_count)
+	  File.open("generation.log", "a") do |f|
+	    f.write "\n* Generated site at #{Time.now}, entries = #{entry_count}"
 	  end
 	end
 end
