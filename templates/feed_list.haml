@@ -1,0 +1,10 @@
+%ul
+  - list.each do |item|
+    =item
+%ul.pages
+  - if prev_page_no
+    %li#back
+      ="<a href='#{prev_page_no}.html'>Previous</a>"  
+  - if next_page_no
+    %li#forward
+      ="<a href='#{next_page_no}.html'>Next</a>"

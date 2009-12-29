@@ -1,0 +1,11 @@
+%li.entry{:id => "#{entry.google_item_id}"}
+  %h2
+    %a{:href => "#{entry.href}"}
+      =entry.title
+    %span.feed-info
+      &nbsp;
+      =entry.author
+      at
+      %a{:href => "#{entry.feed.href}"}
+        =entry.feed.title
+  =content

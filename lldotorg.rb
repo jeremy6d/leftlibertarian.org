@@ -1,7 +1,11 @@
 require 'greadie'
+require 'nokogiri'
+require 'activesupport'
+require 'haml'
+require 'sass'
 
 class LLDotOrg  
-  MAX_BODY_LENGTH = 1250
+  MAX_BODY_LENGTH = 1100
   PARAGRAPH_DELIMITER_REGEXP = /(<br>|<p>|<\/p>|\n)/
   
   def initialize(environment = "development")
@@ -20,12 +24,13 @@ class LLDotOrg
 	  [ 200, {}, page ]
 	end
 	
-	def generate(save_to_path)
-	  raw_list = @conn.reading_list(999999).first
+	def generate(save_to_path, limit = 999999)
+	  raw_list = @conn.reading_list(limit).first
 	  
-	  puts raw_list.size
-	  
-	  html_list = raw_list.collect { |item| list_item(item) }
+	  html_list = raw_list.collect do |item| 
+	    render_haml 'feed_item', { :entry => item,
+	                               :content => truncate_body(item, MAX_BODY_LENGTH) }
+    end
 	  
 	  page_number = 1
 	  
@@ -34,24 +39,58 @@ class LLDotOrg
 	  until html_list.empty?
 	    file_name = (page_number == 1) ? "index" : page_number.to_s
 	    file_to_write = File.join path, "#{file_name}.html"
+      haml_engine = Haml::Engine.new(File.read('templates/feed_list.haml'))
+
 	    File.open file_to_write, "w" do |f|
-	      page_entries = html_list.slice!(0, 20)
-	      next_page_number = page_number + 1 unless html_list.empty?
-	      f.write generate_saved_html(page_entries, page_number, next_page_number)
+	      prev_pg = case page_number
+        when 1
+          nil
+        when 2
+          "index"
+        else
+          page_number - 1
+        end
+
+        text = haml_engine.render(Object.new, :list => html_list.slice!(0, 20),
+                                              :next_page_no => (html_list.empty? ? nil : (page_number + 1)),
+                                              :prev_page_no => prev_pg) 
+
+        f.write apply_layout(title(page_number), text)
 	    end
+
 	    page_number = page_number + 1
 	  end
+	  generate_pages
+	  render_css
 	end
 	
 	def self.establish_connection(username, password)
 	  GReadie.new username, password
 	end
 	
-	def list_item(entry)
-	  "<li class='entry' id='#{entry.google_item_id}'>
-        <h2><a href='#{entry.href}'>#{entry.title}</a> <small>#{entry.author} at <a href='#{entry.feed.href}'>#{entry.feed.title}</a></small></h2>
-        #{massage(entry)}
-     </li>"
+	def truncate_body(entry, char_count = 2000)
+    doc = Nokogiri::XML::DocumentFragment.parse(entry.body)
+    count = index = 0
+    truncated = false
+    
+    doc.children.each do |child|
+      count = count + child.content.length.to_i
+      index = index + 1
+      if count > char_count
+        truncated = true
+        break
+      end
+    end
+
+    normalized_content = doc.children.slice(0, index).to_html
+
+    if truncated
+      normalized_content << "<div class=\"read_more\"><a href='#{entry.href}'>(read more)</a></div>" 
+    end
+    
+    normalized_content
+  rescue
+    "<p>PARSING ERROR! Jeremy sucks.</p>"
 	end
 	
 	# TODO: close tags
@@ -125,5 +164,37 @@ class LLDotOrg
           <ul> }, list, %q{</ul>}, ("<div><a href='/pages/#{next_page_no}'>Next page</a></div>" if next_page_no), %q{
         </body>
       </html> }].compact.join
+	end
+	
+	def title(page_no)
+	  subtitle = "Page #{page_no}" if (page_no && (page_no > 1))
+	  ["leftlibertarian.org", subtitle].compact.join(" - ")
+	end
+	
+	def render_css
+	  puts "generating stylesheet..."
+	  engine = Sass::Engine.new(File.read('templates/style.sass'))
+	  File.open "public/style.css", "w" do |f|
+      f.write engine.render
+    end
+	end
+	
+	def apply_layout(title, content)
+	  render_haml "layout", {:content => content, :title => title}
+	end
+	
+	def render_haml(template_file_name, data_hash = {})
+	  template_markup = File.read("templates/#{template_file_name}.haml")
+	  engine = Haml::Engine.new(template_markup)
+	  engine.render(Object.new, data_hash)
+	end
+	
+	def generate_pages
+	  ["about"].each do |page_name|
+	    File.open("public/#{page_name}.html", "w") do |f|
+	      page_content = Haml::Engine.new(File.read("pages/about.haml")).render
+	      f.write apply_layout("About leftlibertarian.org", page_content)
+	    end
+	  end
 	end
 end

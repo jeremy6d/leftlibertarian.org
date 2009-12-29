@@ -1,0 +1,31 @@
+!!!
+%html
+  %head
+    %title
+      =title
+    %link{:href => "style.css", :media => "all", :rel => "stylesheet", :type => "text/css"}
+    %link{ :href => "http://feeds.feedburner.com/LeftLibertarian", :rel => "alternate", :title => "LeftLibertarian.org Main Feed", :type => "application/atom+xml" }
+    %meta{:name => "description", :content => "Left libertarian content from around the web..."}
+  %body
+    #page
+      %h1
+        %a{:href => "index.html"}
+          %img{:src => "images/logo.png", :alt => "#{title}"}
+      #slogan
+        Left libertarian views from around the web...
+      #content
+        =content
+      #footer
+        %ul.nav
+          %li
+            %a{:href => "about.html"}
+              About
+          %li
+            %a{:href => "leftlibertarianism.html"}
+              Left Libertarianism
+          %li
+            %a{:href => "contact.html"}
+              Contact
+        All rights belong to the authors of the respective articles.
+        %br
+        leftlibertarian.org is a production of 6thdensity.net

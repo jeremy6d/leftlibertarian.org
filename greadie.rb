@@ -1,5 +1,6 @@
 require 'google/reader'
 require 'json'
+require 'nokogiri'
 
 class GReadie
   READING_LIST_URL = "http://www.google.com/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
@@ -39,13 +40,14 @@ class GReadie::Entry
   attr_reader :title, :author, :href, :google_item_id, :feed, :categories, :body
   
   def initialize(item)
-    @title = item['title']
-    @author = item['author']
+    
+    @title = normalize item['title'] 
+    @author = normalize item['author'] 
     @href = item['alternate'].first['href']
     @google_item_id = item['id']
     @published = item['published']
     @updated = item['updated']
-    @body = get_body(item)
+    @body = normalize get_body(item)
     @feed = GReadie::Feed.new(item['origin'])
   end
   
@@ -72,6 +74,11 @@ protected
     return container['content']
   rescue
     nil
+  end
+  
+  def normalize(text)
+    return text if text.nil?
+    Nokogiri::XML::DocumentFragment.parse(text).to_html
   end
 end
 
