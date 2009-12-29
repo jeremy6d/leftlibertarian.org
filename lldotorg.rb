@@ -3,6 +3,7 @@ require 'nokogiri'
 require 'activesupport'
 require 'haml'
 require 'sass'
+require 'ftools'
 
 class LLDotOrg  
   MAX_BODY_LENGTH = 1100
@@ -62,6 +63,7 @@ class LLDotOrg
 	  end
 	  generate_pages
 	  render_css
+	  copy_images
 	end
 	
 	def self.establish_connection(username, password)
@@ -195,6 +197,20 @@ class LLDotOrg
 	      page_content = Haml::Engine.new(File.read("pages/about.haml")).render
 	      f.write apply_layout("About leftlibertarian.org", page_content)
 	    end
+	  end
+	end
+	
+	def copy_images
+	  pwd = Dir.pwd
+	  images_src = "#{pwd}/images"
+	  images_dest = "#{pwd}/public/images"
+	  
+	  Dir.mkdir(images_dest) unless test(?d, images_dest)
+	  
+	  Dir.open(images_src).entries.each do |img_filename|
+	    next unless /\.(jpg|gif|png|bmp)/.match img_filename
+	    puts img_filename
+	    File.copy "#{images_src}/#{img_filename}", "#{images_dest}/#{img_filename}", true
 	  end
 	end
 end
