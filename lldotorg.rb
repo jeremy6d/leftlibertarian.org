@@ -6,7 +6,7 @@ require 'sass'
 require 'ftools'
 
 class LLDotOrg  
-  MAX_BODY_LENGTH = 1100
+  MAX_BODY_LENGTH = 1000
   PARAGRAPH_DELIMITER_REGEXP = /(<br>|<p>|<\/p>|\n)/
   
   def initialize(environment = "development")
