@@ -1,5 +1,6 @@
 require 'google/reader'
-require 'json'
+#require 'json'
+require 'active_support'
 require 'nokogiri'
 
 class GReadie
@@ -32,7 +33,9 @@ protected
 	
 	def json_reading_list(options = {})
 	  url = "#{READING_LIST_URL}"
-	  JSON.parse(fetch(url, :query_hash => options))
+    # JSON.parse(fetch(url, :query_hash => options))
+    json_document = fetch(url, :query_hash => options)
+    ActiveSupport::JSON.decode json_document
 	end
 end
 
