@@ -1,21 +1,80 @@
 require 'greadie'
 require 'nokogiri'
-require 'activesupport'
+require 'active_support'
 require 'haml'
 require 'sass'
 require 'ftools'
 
 class LLDotOrg  
   MAX_BODY_LENGTH = 1000
-  PARAGRAPH_DELIMITER_REGEXP = /(<br>|<p>|<\/p>|\n)/
+  DEFAULT_OUTPUT_DIR = "public"
+  DEFAULT_PER_PAGE = 20
+  LIST_TEMPLATE = "feed_list"
+  ITEM_TEMPLATE = "feed_item"
   
-  def initialize(environment = "development", options = {})
-    creds = YAML.load(File.open('config/credentials.yml'))
-    establish_connection! creds[environment]['username'], 
-                          creds[environment]['password']
+  def initialize(environment = "development", save_to_path = nil)
+    @credentials ||= YAML.load(File.open('config/credentials.yml'))[environment]
+    @output_path = save_to_path || File.expand_path(DEFAULT_OUTPUT_DIR)
+    @connection = GReadie.new @credentials['username'], @credentials['password']
   end
 	
-	def error_pages(target_dir)
+	def generate_site!
+	  raise "No connection established" unless @connection
+	  entry_count = update_entry_list!
+	  paginate_entry_list!
+	  generate_css!
+	  generate_static_pages!
+	  generate_error_pages!
+	  copy_images!
+	  log!(entry_count)
+	end
+	
+	def update_entry_list!(number_to_fetch = 99999)
+	  entries = @connection.reading_list(number_to_fetch).first
+	  @normalized_entries = entries.collect do |item|
+	    render_haml ITEM_TEMPLATE, { :entry => item,
+	                                 :content => truncate_body(item, MAX_BODY_LENGTH) }
+	  end
+	  @normalized_entries.size
+	end
+	
+	def entry_list
+	  @normalized_entries
+	end
+	
+	def generate_css!
+	  puts "generating stylesheet..."
+	  engine = Sass::Engine.new(File.read('templates/style.sass'))
+	  File.open "public/style.css", "w" do |f|
+      f.write engine.render
+    end
+	end
+	
+	def generate_static_pages!
+	  Dir.new("pages").entries.select { |n| /\.haml/.match n }.each do |page_name|
+	    page_title = page_name.split(".").first
+	    File.open("public/#{page_title}.html", "w") do |f|
+	      page_content = Haml::Engine.new(File.read("pages/#{page_name}")).render
+	      f.write apply_layout("#{page_title.titleize} leftlibertarian.org", page_content)
+	    end
+	  end
+	end
+	
+	def copy_images!
+	  pwd = Dir.pwd
+	  images_src = "#{pwd}/images"
+	  images_dest = "#{pwd}/public/images"
+	  
+	  Dir.mkdir(images_dest) unless test(?d, images_dest)
+	  
+	  Dir.open(images_src).entries.each do |img_filename|
+	    next unless /\.(jpg|gif|png|bmp)/.match img_filename
+	    puts img_filename
+	    File.copy "#{images_src}/#{img_filename}", "#{images_dest}/#{img_filename}", true
+	  end
+	end
+	
+	def generate_error_pages!(target_dir = "error")
     ["404","5xx"].each do |err|
       File.open("#{target_dir}/#{err}.html", "w") do |f|
         f.write Haml::Engine.new(File.read("templates/#{err}.haml")).render
@@ -23,75 +82,35 @@ class LLDotOrg
     end
 	end
 	
-	def entries
-	  @normalized_entries
-  end
-	
-	def generate(save_to_path, limit = 999999)
-	  raw_list = @conn.reading_list(limit).first
-	  
-	  html_list = raw_list.collect do |item| 
-	    render_haml 'feed_item', { :entry => item,
-	                               :content => truncate_body(item, MAX_BODY_LENGTH) }
-    end
-	  
-
-	  render_css
-	  copy_images
-	  log raw_list.size
-	end
-	
-	def establish_connection!(username, password)
-	  @conn = GReadie.new username, password
-	end
-	
-	def update!(continuation = nil)
-	  @last_continuation = @continuation
-	  entries, @continuation = @conn.reading_list(initial_entry_count, continuation)
-	  @normalized_entries = entries.collect do |item|
-	    render_haml 'feed_item', { :entry => item,
-	                               :content => truncate_body(item, MAX_BODY_LENGTH) }
-	  end
-	end
-	
-	def paginate_all_entries(save_to_path, entries_per_page)
+	def paginate_entry_list!(entries_per_page = DEFAULT_PER_PAGE)
 	  html_list = @normalized_entries.clone
-	  
 	  page_number = 1
 	  
-	  path = File.expand_path(save_to_path)
-	  
 	  until html_list.empty?
-	    generate_page(path, :page_number => page_number)
+	    file_name = (page_number == 1) ? "index" : page_number.to_s
+      file_to_write = File.join @output_path, "#{file_name}.html"
+
+      File.open file_to_write, "w" do |f|
+        prev_pg = case page_number
+        when 1
+          nil
+        when 2
+          "index"
+        else
+          page_number - 1
+        end
+
+  	    html = render_haml LIST_TEMPLATE, :list => html_list.slice!(0, DEFAULT_PER_PAGE),
+                                          :next_page_no => (html_list.empty? ? nil : (page_number + 1)),
+                                          :prev_page_no => prev_pg
+
+        f.write apply_layout(title(page_number), html)
+      end
 	    page_number = page_number + 1
 	  end
-	  true
-	rescue
-	  false
 	end
 	
-	def generate_page(pages_root_path, navigation)
-	  file_name = ( options[:page_number] == 1) ? "index" : page_number.to_s
-    file_to_write = File.join path, "#{file_name}.html"
-    @haml_engine = Haml::Engine.new(File.read('templates/feed_list.haml'))
-    
-    File.open file_to_write, "w" do |f|
-      prev_pg = case page_number
-      when 1
-        nil
-      when 2
-        "index"
-      else
-        page_number - 1
-      end
-	  
-	    html = haml_engine.render Object.new, :list => html_list.slice!(0, 20),
-                                            :next_page_no => (html_list.empty? ? nil : (page_number + 1)),
-                                            :prev_page_no => prev_pg
-
-      f.write apply_layout(title(page_number), html)
-	end
-	
+protected	
 	def truncate_body(entry, char_count = 2000)
     doc = Nokogiri::XML::DocumentFragment.parse(entry.body)
     count = index = 0
@@ -122,49 +141,21 @@ class LLDotOrg
 	  ["leftlibertarian.org", subtitle].compact.join(" - ")
 	end
 	
-	def render_css
-	  puts "generating stylesheet..."
-	  engine = Sass::Engine.new(File.read('templates/style.sass'))
-	  File.open "public/style.css", "w" do |f|
-      f.write engine.render
-    end
-	end
-	
 	def apply_layout(title, content)
-	  render_haml "layout", {:content => content, :title => title, :tracking_code => tracking_code}
+	  render_haml "layout", :content => content, 
+	                        :title => title, 
+	                        :tracking_code => tracking_code
 	end
 	
-	def render_haml(template_file_name, data_hash = {})
-	  template_markup = File.read("templates/#{template_file_name}.haml")
+	def render_haml(template_name, data_hash = {})
+	  raise "No template" unless template_name
+	  template_path = "templates/#{template_name}.haml"
+	  template_markup = File.read(template_path)
 	  engine = Haml::Engine.new(template_markup)
 	  engine.render(Object.new, data_hash)
 	end
 	
-	def generate_pages
-	  Dir.new("pages").entries.select { |n| /\.haml/.match n }.each do |page_name|
-	    page_title = page_name.split(".").first
-	    File.open("public/#{page_title}.html", "w") do |f|
-	      page_content = Haml::Engine.new(File.read("pages/#{page_name}")).render
-	      f.write apply_layout("#{page_title.titleize} leftlibertarian.org", page_content)
-	    end
-	  end
-	end
-	
-	def copy_images
-	  pwd = Dir.pwd
-	  images_src = "#{pwd}/images"
-	  images_dest = "#{pwd}/public/images"
-	  
-	  Dir.mkdir(images_dest) unless test(?d, images_dest)
-	  
-	  Dir.open(images_src).entries.each do |img_filename|
-	    next unless /\.(jpg|gif|png|bmp)/.match img_filename
-	    puts img_filename
-	    File.copy "#{images_src}/#{img_filename}", "#{images_dest}/#{img_filename}", true
-	  end
-	end
-	
-	def log(entry_count)
+	def log!(entry_count)
 	  File.open("generation.log", "a") do |f|
 	    f.write "\n* Generated site at #{Time.now}, entries = #{entry_count}"
 	  end
@@ -172,19 +163,5 @@ class LLDotOrg
 	
 	def tracking_code
 	  File.read("templates/analytics_code.html")
-	end
-	
-	
-	def call(env)
-	  # parse continuation in request uri
-    tokens = /continue\/(\w+)/.match env['PATH_INFO']
-    continuation = tokens.captures.first unless tokens.nil?
-    
-    # refresh data
-    list, continuation = @conn.reading_list(20, continuation)
-    
-    page = get_html(list.collect { |item| list_item(item) }, continuation)
-	  
-	  [ 200, {}, page ]
 	end
 end
