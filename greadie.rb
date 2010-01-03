@@ -73,7 +73,7 @@ class GReadie::Entry
 protected
 
   def get_body(item_hash)
-    container = item_hash['content'] || item_hash['summary']
+    container = item_hash['content'] || item_hash['summary'] || item_hash['description']
     return container['content']
   rescue
     nil

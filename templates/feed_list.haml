@@ -8,3 +8,9 @@
   - if next_page_no
     %li#forward
       ="<a href='#{next_page_no}.html'>Next</a>"
+  - if continuation_backward
+    %li#back
+      ="<a href='continue/#{continuation_backward}'>Previous</a>"
+  - if continuation_forward
+    %li#forward
+      ="<a href='continue/#{continuation_forward}'>Next</a>"
