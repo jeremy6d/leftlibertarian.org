@@ -31,4 +31,7 @@
         leftlibertarian.org is a production of 6thdensity.net
         %br
         = Time.now.strftime "Last updated on %A, %B %d at %I:%M %p EST"
+        %br
+        - commit = File.read(".git/refs/heads/master")
+        = "Last commit: <a href='http://github.com/jeremy6d/leftlibertarian.org/commit/#{commit}'>#{commit}</a>"
   =tracking_code
