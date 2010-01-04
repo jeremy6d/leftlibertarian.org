@@ -31,7 +31,7 @@ class LLDotOrg
 	
 	def update_entry_list!(number_to_fetch = 99999)
 	  entries = @connection.reading_list(number_to_fetch).first
-	  @normalized_entries = entries.collect do |item|
+	  @normalized_entries = entries.sort { |i,j| j.sort_by_time <=> i.sort_by_time }.collect do |item|
 	    render_haml ITEM_TEMPLATE, { :entry => item,
 	                                 :content => truncate_body(item, MAX_BODY_LENGTH) }
 	  end
@@ -158,6 +158,7 @@ protected
 	def log!(entry_count)
 	  File.open("generation.log", "a") do |f|
 	    f.write "\n* Generated site at #{Time.now}, entries = #{entry_count}"
+	    f.write @normalized_entries.inspect
 	  end
 	end
 	

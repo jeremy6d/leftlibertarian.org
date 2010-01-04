@@ -54,12 +54,16 @@ class GReadie::Entry
     @feed = GReadie::Feed.new(item['origin'])
   end
   
+  def sort_by_time
+    updated_at || published_at
+  end
+  
   def published_at
-    Time.new @published
+    Time.at @published rescue nil
   end
   
   def updated_at
-    Time.new @updated
+    Time.at @updated rescue nil
   end
   
   def body=(text)
