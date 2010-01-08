@@ -39,6 +39,7 @@ class LLDotOrg
 	end
 	
 	def entry_list
+	  update_entry_list! unless @normalized_entries
 	  @normalized_entries
 	end
 	
