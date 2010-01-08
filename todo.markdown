@@ -2,3 +2,5 @@
 
 * remove duplicate articles (dupes determined by matching title, author, and published_at time?)
 * body should map to more types of tags (<content:encoded> like in Francois's feed)
+* Run more GReadie entry fields through nokogiri to strip out unsupported characters
+* Need to reevaluate strategy for truncating bodies
