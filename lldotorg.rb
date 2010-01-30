@@ -4,6 +4,7 @@ require 'active_support'
 require 'haml'
 require 'sass'
 require 'ftools'
+require 'builder'
 
 class LLDotOrg  
   MAX_BODY_LENGTH = 1000
@@ -11,6 +12,7 @@ class LLDotOrg
   DEFAULT_PER_PAGE = 20
   LIST_TEMPLATE = "feed_list"
   ITEM_TEMPLATE = "feed_item"
+  SHARE_POST_LIMIT = DEFAULT_PER_PAGE
   
   def initialize(environment = "development", save_to_path = nil)
     @credentials ||= YAML.load(File.open('config/credentials.yml'))[environment]
@@ -26,12 +28,21 @@ class LLDotOrg
 	  generate_static_pages!
 	  generate_error_pages!
 	  copy_images!
+	  bulk_share!
 	  log!(entry_count)
 	end
 	
+	def bulk_share!(limit = SHARE_POST_LIMIT)
+	  @greadie_entries[0..limit].each do |e|
+	    @connection.share! e
+	  end
+	end
+	
 	def update_entry_list!(number_to_fetch = 99999)
-	  entries = @connection.reading_list(number_to_fetch).first
-	  @normalized_entries = entries.sort { |i,j| j.sort_by_time <=> i.sort_by_time }.collect do |item|
+	  @greadie_entries = @connection.reading_list(number_to_fetch).first
+	  @normalized_entries = @greadie_entries.sort do |i,j| 
+	    j.sort_by_time <=> i.sort_by_time 
+	  end.collect do |item|
 	    render_haml ITEM_TEMPLATE, { :entry => item,
 	                                 :content => truncate_body(item, MAX_BODY_LENGTH) }
 	  end
@@ -111,6 +122,31 @@ class LLDotOrg
 	  end
 	end
 	
+	
+	def generate_atom!
+    # atom_entries = @normalized_entries.collect do |greadie_entry|
+    #   Atom::Entry.new do |e|
+    #         e.title = greadie_entry.title
+    #         e.links << Atom::Link.new(:href => greadie_entry.href)
+    #         e.id = greadie_entry.google_item_id
+    #         e.updated = greadie_entry.updated_at
+    #         e.content = greadie_entry.body
+    #       end
+    # end
+    # 
+    # feed = Atom::Feed.new do |f|
+    #       f.title = "leftlibertarian.org"
+    #       f.links << Atom::Link.new(:href => "http://leftlibertarian.org/")
+    #       f.updated = Time.now
+    #       f.id = atom_id("tag:leftlibertarian.org")
+    #       f.entries = atom_entries
+    #     end
+    #     
+    #     atom_entries = @normalized_entries.collect do |greadie_entry|
+    #       Builder::XmlMar
+    #     end
+	end
+	
 protected	
 	def truncate_body(entry, char_count = 2000)
     doc = Nokogiri::XML::DocumentFragment.parse(entry.body)
@@ -165,5 +201,13 @@ protected
 	
 	def tracking_code
 	  File.read("templates/analytics_code.html")
+	end
+	
+	
+	def atom_id(url, publish_date)
+	  formatted_date = Time.parse(publish_date).strftime(",%Y-%m-%d:")
+	  segments = url.gsub("http://", "tag:").split("/")
+	  segments.first << formatted_date
+	  segments.join("/")
 	end
 end

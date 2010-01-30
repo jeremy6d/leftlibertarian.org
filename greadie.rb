@@ -4,8 +4,10 @@ require 'active_support'
 require 'nokogiri'
 
 class GReadie
-  READING_LIST_URL = "http://www.google.com/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
+  BASE_URL = "http://www.google.com/reader/api/0/"
+  READING_LIST_URL = BASE_URL + "stream/contents/user/-/state/com.google/reading-list"
   UNREAD_LIST_URL  = READING_LIST_URL + "?xt=user/-/state/com.google/read" #presently not used
+  EDIT_TAG_URL = BASE_URL + "edit-tag"
 
 	def initialize(in_username, in_password)
 		@username = in_username
@@ -18,6 +20,24 @@ class GReadie
       GReadie::Entry.new(item_hash)
     end
     [list, response['continuation']]
+	end
+	
+	def token
+	  @token || reset_token!
+	end
+	
+	def reset_token!
+	  @token = Google::Reader::Base.get_token
+	end
+	
+	def share!(entry)
+	  Google::Reader::Base.post GReadie::EDIT_TAG_URL, :form_data => {
+      :T => token,
+      :a => Google::Reader::State::BROADCAST, 
+      :async => false,
+      :i => entry.google_item_id,
+      :s => entry.feed.google_feed_id
+    }
 	end
 
 protected
