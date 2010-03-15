@@ -147,6 +147,10 @@ class LLDotOrg
     #     end
 	end
 	
+	def raw_entries
+	  @greadie_entries
+	end
+	
 protected	
 	def truncate_body(entry, char_count = 2000)
     doc = Nokogiri::XML::DocumentFragment.parse(entry.body)
