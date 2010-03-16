@@ -5,3 +5,4 @@
 * Run more GReadie entry fields through nokogiri to strip out unsupported characters
 * Need to reevaluate strategy for truncating bodies
 * Forums with syndication
+* turn the script into a rake build, allowing parts of the build to be skipped / added

@@ -5,8 +5,17 @@ require 'haml'
 require 'sass'
 require 'ftools'
 require 'builder'
+require 'ruby-debug'
 
-class LLDotOrg  
+class LLDotOrgHelper
+  attr_reader :title
+  def set_title(title)
+    @title = title
+  end
+end
+
+class LLDotOrg
+   
   MAX_BODY_LENGTH = 1000
   DEFAULT_OUTPUT_DIR = "public"
   DEFAULT_PER_PAGE = 20
@@ -22,8 +31,8 @@ class LLDotOrg
 	
 	def generate_site!
 	  raise "No connection established" unless @connection
-	  entry_count = update_entry_list!
-	  paginate_entry_list!
+    entry_count = update_entry_list!
+    paginate_entry_list!
 	  generate_css!
 	  generate_static_pages!
 	  generate_error_pages!
@@ -66,8 +75,8 @@ class LLDotOrg
 	  Dir.new("pages").entries.select { |n| /\.haml/.match n }.each do |page_name|
 	    page_title = page_name.split(".").first
 	    File.open("public/#{page_title}.html", "w") do |f|
-	      page_content = Haml::Engine.new(File.read("pages/#{page_name}")).render
-	      f.write apply_layout("#{page_title.titleize} leftlibertarian.org", page_content)
+	      page_content = Haml::Engine.new(File.read("pages/#{page_name}")).render(h = LLDotOrgHelper.new)
+	      f.write apply_layout("#{h.title || page_title.titleize} | leftlibertarian.org", page_content)
 	    end
 	  end
 	end
@@ -120,31 +129,6 @@ class LLDotOrg
       end
 	    page_number = page_number + 1
 	  end
-	end
-	
-	
-	def generate_atom!
-    # atom_entries = @normalized_entries.collect do |greadie_entry|
-    #   Atom::Entry.new do |e|
-    #         e.title = greadie_entry.title
-    #         e.links << Atom::Link.new(:href => greadie_entry.href)
-    #         e.id = greadie_entry.google_item_id
-    #         e.updated = greadie_entry.updated_at
-    #         e.content = greadie_entry.body
-    #       end
-    # end
-    # 
-    # feed = Atom::Feed.new do |f|
-    #       f.title = "leftlibertarian.org"
-    #       f.links << Atom::Link.new(:href => "http://leftlibertarian.org/")
-    #       f.updated = Time.now
-    #       f.id = atom_id("tag:leftlibertarian.org")
-    #       f.entries = atom_entries
-    #     end
-    #     
-    #     atom_entries = @normalized_entries.collect do |greadie_entry|
-    #       Builder::XmlMar
-    #     end
 	end
 	
 	def raw_entries
