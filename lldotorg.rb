@@ -183,7 +183,6 @@ protected
 	def log!(entry_count)
 	  File.open("generation.log", "a") do |f|
 	    f.write "\n* Generated site at #{Time.now}, entries = #{entry_count}"
-	    f.write @normalized_entries.inspect
 	  end
 	end
 	
