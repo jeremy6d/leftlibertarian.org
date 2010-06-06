@@ -20,9 +20,9 @@ end
 
 begin
   LLDotOrg.new('production').generate_site!
-rescue Exception => e
-  handle_exception(e)
-rescue Timeout::Error => e
-  handle_exception(e)
+# rescue Exception => e
+#   handle_exception(e)
+# rescue Timeout::Error => e
+#   handle_exception(e)
 end
 
