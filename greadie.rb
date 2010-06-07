@@ -1,5 +1,5 @@
 require 'google/reader'
-#require 'json'
+require 'ruby-debug'
 require 'active_support'
 require 'nokogiri'
 
@@ -17,8 +17,8 @@ class GReadie
 	def reading_list(number_to_fetch = 20, continuation = nil)
 	  response = json_reading_list({:n => number_to_fetch, :c => continuation})
 	  list = response['items'].collect do |item_hash|
-      GReadie::Entry.new(item_hash)
-    end
+      GReadie::Entry.new(item_hash) rescue nil
+    end.compact
     [list, response['continuation']]
 	end
 	
@@ -63,8 +63,8 @@ class GReadie::Entry
   attr_reader :title, :author, :href, :google_item_id, :feed, :categories, :body
   
   def initialize(item)
-    
-    @title = normalize item['title'] 
+    raise "Title is nil" unless item['title']
+    @title = normalize item['title']
     @author = normalize item['author'] 
     @href = item['alternate'].first['href']
     @google_item_id = item['id']

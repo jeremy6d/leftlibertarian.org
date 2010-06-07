@@ -61,16 +61,22 @@ class LLDotOrg
 	end
 	
 	def filter_entries!
-	  @greadie_entries.delete_if { |entry| entry.title.include? "At C4SS" }
+	  @greadie_entries.delete_if do |entry| 
+	    puts entry.inspect
+	    !entry.title.grep(/At C4SS/i).empty?
+	  end
 	  remove_duplicates!
 	end
 	
 	def remove_duplicates!
 	  url_list = []
 	  @greadie_entries.delete_if do |entry|
-	    duplicate = url_list.include? entry.href
-	    url_list << entry.href
-	    duplicate
+	    if url_list.include? entry.href
+	      true
+	    else
+	      url_list << entry.href
+        false
+      end
 	  end
 	end
 	
