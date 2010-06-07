@@ -49,13 +49,29 @@ class LLDotOrg
 	
 	def update_entry_list!(number_to_fetch = 99999)
 	  @greadie_entries = @connection.reading_list(number_to_fetch).first
+	  filter_entries!
 	  @normalized_entries = @greadie_entries.sort do |i,j| 
 	    j.sort_by_time <=> i.sort_by_time 
 	  end.collect do |item|
+      puts item.inspect
 	    render_haml ITEM_TEMPLATE, { :entry => item,
 	                                 :content => truncate_body(item, MAX_BODY_LENGTH) }
 	  end
 	  @normalized_entries.size
+	end
+	
+	def filter_entries!
+	  @greadie_entries.delete_if { |entry| entry.title.include? "At C4SS" }
+	  remove_duplicates!
+	end
+	
+	def remove_duplicates!
+	  url_list = []
+	  @greadie_entries.delete_if do |entry|
+	    duplicate = url_list.include? entry.href
+	    url_list << entry.href
+	    duplicate
+	  end
 	end
 	
 	def entry_list
