@@ -45,7 +45,7 @@ protected
 	  @connection ||= Google::Reader::Base.establish_connection @username, @password
 	end
 	
-	def fetch(url, options)
+	def fetch(url, options) 
 	  raise "No url provided" unless url
 	  raise "Couldn't connect to Google Reader" unless connect!
 	  Google::Reader::Base.get url, options
