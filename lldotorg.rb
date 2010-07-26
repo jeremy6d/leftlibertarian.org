@@ -1,4 +1,4 @@
-require File.join %w(.. greedy lib greedy)
+require 'greedy'
 require 'nokogiri'
 require 'active_support'
 require 'haml'
