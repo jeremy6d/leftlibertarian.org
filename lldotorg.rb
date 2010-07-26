@@ -1,4 +1,4 @@
-require File.join %w(.. greedy lib greedy)
+require 'greedy'
 require 'nokogiri'
 require 'active_support'
 require 'haml'
@@ -71,8 +71,7 @@ class LLDotOrg
 	    end
 	    
 	    page_number += 1
-	    entries = next_entries  
-	    debugger
+	    entries = next_entries
 	  end
 	  
 	  generate_css!
