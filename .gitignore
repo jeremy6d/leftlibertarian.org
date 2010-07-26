@@ -2,3 +2,4 @@ public/**
 config/credentials.yml
 *.log
 error/**
+.DS_Store

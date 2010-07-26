@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'lldotorg'
+require 'greedy'
 require 'net/smtp'
 
 def handle_exception(e)

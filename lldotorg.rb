@@ -1,4 +1,4 @@
-require 'greadie'
+require File.join %w(.. greedy lib greedy)
 require 'nokogiri'
 require 'active_support'
 require 'haml'
@@ -6,6 +6,13 @@ require 'sass'
 require 'ftools'
 require 'builder'
 require 'ruby-debug'
+
+class Array
+  def filter &block
+	  raise "Must provide block to filter" unless block_given?
+	  collect { |entry| yield entry }.compact
+	end
+end
 
 class LLDotOrgHelper
   attr_reader :title
@@ -26,64 +33,125 @@ class LLDotOrg
   def initialize(environment = "development", save_to_path = nil)
     @credentials ||= YAML.load(File.open('config/credentials.yml'))[environment]
     @output_path = save_to_path || File.expand_path(DEFAULT_OUTPUT_DIR)
-    @connection = GReadie.new @credentials['username'], @credentials['password']
+    @reading_list = Greedy::Stream.new @credentials['username'], 
+                                       @credentials['password']
   end
 	
-	def generate_site!
-	  raise "No connection established" unless @connection
-    entry_count = update_entry_list!
-    paginate_entry_list!
+	def generate_site! #(*filters)
+	  entries = @reading_list.entries
+	  html_entries = []
+	  page_number = 1
+	  until entries.empty? do
+	    next_entries = @reading_list.continue!
+	    
+	    puts "* generating page #{page_number}"
+	    html_entries =  entries.reject do |entry|
+                        !!(at_c4ss?(entry) || duplicate?(entry))
+                      end.collect do |entry|
+                        render_haml ITEM_TEMPLATE, :entry => entry
+                      end
+	                    
+	    file_name = (page_number == 1) ? "index" : page_number.to_s
+	    
+	    prev_page_no = case page_number
+      when 1
+        nil
+      when 2
+        "index"
+      else
+        page_number - 1
+      end
+	    
+	    File.open File.join(@output_path, "#{file_name}.html"), "w" do |file|
+	      html_entry_list = render_haml LIST_TEMPLATE, :list => html_entries,
+                                                     :next_page_no => (next_entries.empty? ? nil : (page_number + 1)),
+                                                     :prev_page_no => prev_page_no
+	      html_page = apply_layout title(page_number), html_entry_list
+	      file.write html_page
+	    end
+	    
+	    page_number += 1
+	    entries = next_entries  
+	    debugger
+	  end
+	  
 	  generate_css!
 	  generate_static_pages!
 	  generate_error_pages!
 	  copy_images!
-	  bulk_share!
-	  log!(entry_count)
+    # bulk_share!
+	  log!(@reading_list.entries.size)
 	end
 	
-	def bulk_share!(limit = SHARE_POST_LIMIT)
-	  @greadie_entries[0..limit].each do |e|
-	    @connection.share! e
-	  end
+  # def paginate_entry_list!(entries_per_page = DEFAULT_PER_PAGE)
+  #   html_list = @normalized_entries.clone
+  #   
+  #   
+  #   until html_list.empty?
+  #     
+  #       
+  # 
+  #       File.open file_to_write, "w" do |f|
+  #         
+  # 
+  #         
+  # 
+  #         
+  #       end
+  #     page_number = page_number + 1
+  #   end
+  # end
+	
+	def at_c4ss?(entry)
+	  !entry.title.grep(/At C4SS/i).empty?
 	end
 	
-	def update_entry_list!(number_to_fetch = 99999)
-	  @greadie_entries = @connection.reading_list(number_to_fetch).first
-	  filter_entries!
-	  @normalized_entries = @greadie_entries.sort do |i,j| 
-	    j.sort_by_time <=> i.sort_by_time 
-	  end.collect do |item|
-      puts item.inspect
-	    render_haml ITEM_TEMPLATE, { :entry => item,
-	                                 :content => truncate_body(item, MAX_BODY_LENGTH) }
-	  end
-	  @normalized_entries.size
+	def duplicate?(entry)
+	  @reading_list.entries.select { |e| e.href == entry.href }.size > 1
 	end
 	
-	def filter_entries!
-	  @greadie_entries.delete_if do |entry| 
-	    puts entry.inspect
-	    !entry.title.grep(/At C4SS/i).empty?
-	  end
-	  remove_duplicates!
-	end
-	
-	def remove_duplicates!
-	  url_list = []
-	  @greadie_entries.delete_if do |entry|
-	    if url_list.include? entry.href
-	      true
-	    else
-	      url_list << entry.href
-        false
-      end
-	  end
-	end
-	
-	def entry_list
-	  update_entry_list! unless @normalized_entries
-	  @normalized_entries
-	end
+  # def bulk_share!(limit = SHARE_POST_LIMIT)
+  #   @greadie_entries[0..limit].each do |e|
+  #     @connection.share! e
+  #   end
+  # end
+  # 
+  # def update_entry_list!(number_to_fetch = 99999)
+  #   @greadie_entries = @connection.reading_list(number_to_fetch).first
+  #   filter_entries!
+  #   @normalized_entries = @greadie_entries.sort do |i,j| 
+  #     j.sort_by_time <=> i.sort_by_time 
+  #   end.collect do |item|
+  #       puts item.inspect
+  #     
+  #   end
+  #   @normalized_entries.size
+  # end
+  # 
+  # def filter_entries!
+  #   @greadie_entries.delete_if do |entry| 
+  #     puts entry.inspect
+  #     
+  #   end
+  #   remove_duplicates!
+  # end
+  # 
+  # def remove_duplicates!
+  #   url_list = []
+  #   @greadie_entries.delete_if do |entry|
+  #     if url_list.include? entry.href
+  #       true
+  #     else
+  #       url_list << entry.href
+  #         false
+  #       end
+  #   end
+  # end
+  # 
+  # def entry_list
+  #   update_entry_list! unless @normalized_entries
+  #   @normalized_entries
+  # end
 	
 	def generate_css!
 	  puts "generating stylesheet..."
@@ -125,33 +193,7 @@ class LLDotOrg
     end
 	end
 	
-	def paginate_entry_list!(entries_per_page = DEFAULT_PER_PAGE)
-	  html_list = @normalized_entries.clone
-	  page_number = 1
-	  
-	  until html_list.empty?
-	    file_name = (page_number == 1) ? "index" : page_number.to_s
-      file_to_write = File.join @output_path, "#{file_name}.html"
 
-      File.open file_to_write, "w" do |f|
-        prev_pg = case page_number
-        when 1
-          nil
-        when 2
-          "index"
-        else
-          page_number - 1
-        end
-
-  	    html = render_haml LIST_TEMPLATE, :list => html_list.slice!(0, DEFAULT_PER_PAGE),
-                                          :next_page_no => (html_list.empty? ? nil : (page_number + 1)),
-                                          :prev_page_no => prev_pg
-
-        f.write apply_layout(title(page_number), html)
-      end
-	    page_number = page_number + 1
-	  end
-	end
 	
 	def raw_entries
 	  @greadie_entries

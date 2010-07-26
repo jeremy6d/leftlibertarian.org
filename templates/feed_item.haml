@@ -7,6 +7,6 @@
       =entry.author
       at
       %a{:href => "#{entry.feed.href}"}
-        =entry.feed.title
+        =entry.feed.title 
       =entry.sort_by_time.strftime "(%A, %B %d)"
-  =content
+  = entry.truncated_body
