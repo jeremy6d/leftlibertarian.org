@@ -22,7 +22,7 @@ class LLDotOrgHelper
 end
 
 class LLDotOrg
-   
+  MAX_PAGES = 20
   MAX_BODY_LENGTH = 1000
   DEFAULT_OUTPUT_DIR = "public"
   DEFAULT_PER_PAGE = 20
@@ -42,7 +42,7 @@ class LLDotOrg
 	  html_entries = []
 	  page_number = 1
 	  until entries.empty? do
-	    next_entries = @reading_list.continue!
+	    next_entries = (page_number <= MAX_PAGES) ? @reading_list.continue! : []
 	    
 	    puts "* generating page #{page_number}"
 	    html_entries =  entries.reject do |entry|
