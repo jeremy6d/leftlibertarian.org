@@ -38,6 +38,7 @@ class LLDotOrg
   end
 	
 	def generate_site! #(*filters)
+	  log! "Starting site generation at #{Time.now}", true
 	  entries = @reading_list.entries
 	  html_entries = []
 	  page_number = 1
@@ -46,7 +47,9 @@ class LLDotOrg
 	    
 	    puts "* generating page #{page_number}"
 	    html_entries =  entries.reject do |entry|
-                        !!(at_c4ss?(entry) || duplicate?(entry))
+                        rejectable = !!(at_c4ss?(entry) || duplicate?(entry))
+                        log!("Rejecting '#{entry.title}' (c4ss=#{at_c4ss?(entry)}, dup=#{duplicate?(entry)})") if rejectable
+                        rejectable
                       end.collect do |entry|
                         render_haml ITEM_TEMPLATE, :entry => entry
                       end
@@ -79,7 +82,7 @@ class LLDotOrg
 	  generate_error_pages!
 	  copy_images!
     # bulk_share!
-	  log!(@reading_list.entries.size)
+	  log!("Completed site generation at #{Time.now}")
 	end
 	
   # def paginate_entry_list!(entries_per_page = DEFAULT_PER_PAGE)
@@ -243,9 +246,10 @@ protected
 	  engine.render(Object.new, data_hash)
 	end
 	
-	def log!(entry_count)
+	def log!(message, line_break = false)
 	  File.open("generation.log", "a") do |f|
-	    f.write "\n* Generated site at #{Time.now}, entries = #{entry_count}"
+	    f.write "\n\n\n" if line_break
+	    f.write "\n* #{message}"
 	  end
 	end
 	
