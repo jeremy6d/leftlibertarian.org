@@ -42,12 +42,14 @@ class LLDotOrg
 	  entries = @reading_list.entries
 	  html_entries = []
 	  page_number = 1
+	  @href_list = []
 	  until entries.empty? do
 	    next_entries = (page_number <= MAX_PAGES) ? @reading_list.continue! : []
 	    
 	    puts "* generating page #{page_number}"
 	    html_entries =  entries.reject do |entry|
                         rejectable = !!(at_c4ss?(entry) || duplicate?(entry))
+                        @href_list << entry.href
                         log!("Rejecting '#{entry.title}' (c4ss=#{at_c4ss?(entry)}, dup=#{duplicate?(entry)})") if rejectable
                         rejectable
                       end.collect do |entry|
@@ -109,7 +111,7 @@ class LLDotOrg
 	end
 	
 	def duplicate?(entry)
-	  @reading_list.entries.select { |e| e.href == entry.href }.size > 1
+	  @href_list.include?(entry.href)
 	end
 	
   # def bulk_share!(limit = SHARE_POST_LIMIT)
