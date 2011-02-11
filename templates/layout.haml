@@ -29,12 +29,15 @@
           %li
             %a{:href => "http://github.com/jeremy6d/leftlibertarian.org/blob/master/todo.markdown"}
               To-do
-        All rights belong to the authors of the respective articles.
-        %br
-        leftlibertarian.org is a production of 6thdensity.net
+        All rights belong to the authors of the respective articles and are used with permission whenever possible.
         %br
         = Time.now.strftime "Last updated on %A, %B %d at %I:%M %p EST"
         %br
         - commit = File.read(".git/refs/heads/master")
         = "Last commit: <a href='http://github.com/jeremy6d/leftlibertarian.org/commit/#{commit}'>#{commit}</a>"
+        #tagline
+          leftlibertarian.org is a
+          %a{:href => "http://6thdensity.com"}
+            %img{:src => "http://6thdensity.com/6d_logo_tiny.png", :alt => "6th Density LLC"}
+          joint
   =tracking_code

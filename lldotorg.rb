@@ -6,6 +6,7 @@ require 'sass'
 require 'ftools'
 require 'builder'
 require 'ruby-debug'
+require 'yaml'
 
 class Array
   def filter &block
