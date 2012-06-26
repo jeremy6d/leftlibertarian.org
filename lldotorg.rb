@@ -47,7 +47,7 @@ class LLDotOrg
 	  until entries.empty? do
 	    next_entries = (page_number <= MAX_PAGES) ? @reading_list.continue! : []
 	    
-	    puts "* generating page #{page_number}"
+	    puts "* generating page #{page_number} (with #{next_entries.size} articles)"
 	    html_entries =  entries.reject do |entry|
                         rejectable = !!(at_c4ss?(entry) || duplicate?(entry))
                         @href_list << entry.href
