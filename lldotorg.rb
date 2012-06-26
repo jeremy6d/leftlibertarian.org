@@ -112,7 +112,8 @@ class LLDotOrg
 	end
 	
 	def duplicate?(entry)
-	  (entry.href != "ranprieur.com") && @href_list.include?(entry.href)
+
+	  (entry.href != "http://ranprieur.com") && @href_list.include?(entry.href)
 	end
 	
   # def bulk_share!(limit = SHARE_POST_LIMIT)
