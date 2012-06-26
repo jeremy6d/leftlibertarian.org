@@ -112,7 +112,7 @@ class LLDotOrg
 	end
 	
 	def duplicate?(entry)
-    puts entry.href if entry.href =~ "ran"
+    puts entry.href if entry.href ~= "ran"
 	  (entry.href != "http://ranprieur.com") && @href_list.include?(entry.href)
 	end
 	
