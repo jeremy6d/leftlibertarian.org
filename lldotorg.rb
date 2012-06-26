@@ -56,7 +56,7 @@ class LLDotOrg
                       end.collect do |entry|
                         render_haml ITEM_TEMPLATE, :entry => entry
                       end
-	                    
+	     puts "     entries being published: #{html_entries.size}"
 	    file_name = (page_number == 1) ? "index" : page_number.to_s
 	    
 	    prev_page_no = case page_number
